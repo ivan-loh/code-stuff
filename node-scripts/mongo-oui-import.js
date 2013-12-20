@@ -1,6 +1,8 @@
 var MongoClient = require('mongodb').MongoClient;
 var Server      = require('mongodb').Server;
+var http        = require('http');
 var url         = require('url');
+var fs          = require('fs');
 var filename    = __dirname + '/' + require('node-uuid').v4();
 var lineReader  = require('line-reader');
 var client      = new MongoClient(new Server('localhost', 27017));
@@ -12,13 +14,13 @@ var client      = new MongoClient(new Server('localhost', 27017));
 var download = function download(next, client) {
 
   // Http Request options
-  var options = url.parse('http://standards.ieee.org/develope/regauth/oui/oui.txt');
+  var options = url.parse('http://standards.ieee.org/develop/regauth/oui/oui.txt');
   options.agent = false;
 
   // Download handler
   var handle = function handle(res) {
     var outFile = fs.createWriteStream(filename);
-    res.setEndocding('utf8');
+    res.setEncoding('utf8');
     res.on('data', function (chunk) {
 	outFile.write(chunk);
      }).on('end', function () {
@@ -48,7 +50,7 @@ var download = function download(next, client) {
 var insert = function insert(err, client) {
 
   var db      = client.db('tide');
-  var oui     = db.collection('oui');
+  var ouis    = db.collection('oui');
   var options = { w:1, continueOnError: true };
 
   var display = function (err, count) {
@@ -71,7 +73,7 @@ var insert = function insert(err, client) {
     // Insertion
     if ( (!!oui)  && (oui.length === 6) &&
 	 (!!name) && (name.length > 0) ) {
-      oui({ _id: oui, name: name }, options, display);
+      ouis.insert({ _id: oui, name: name }, options, display);
     }
 
   }).then(function () {
